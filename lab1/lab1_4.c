@@ -27,7 +27,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (lseek(fd, 0, SEEK_SET) < 0) {
+    int seek;
+    seek = lseek(fd, 0, SEEK_SET);
+    printf("write seek: %ld\n", seek);
+    if ( seek < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -39,7 +42,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (lseek(fd, 0, SEEK_END) < 0) {
+    seek = lseek(fd, 0, SEEK_END);
+    printf("write seek: %ld\n", seek);
+    if ( seek < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -51,7 +56,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (lseek(fd, -4, SEEK_CUR) < 0) {
+    seek = lseek(fd, -4, SEEK_CUR);
+    printf("write seek: %ld\n", seek);
+    if ( seek < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -63,7 +70,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (lseek(fd, 0, SEEK_END) < 0) {
+    seek = lseek(fd, 0, SEEK_END);
+    printf("write seek: %ld\n", seek);
+    if ( seek < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -76,8 +85,9 @@ int main(int argc, char* argv[]) {
     }
     // write(fd, "\0", 1);
 
-
-    if (lseek(fd, 0, SEEK_SET) < 0) {
+    seek = lseek(fd, 0, SEEK_SET);
+    printf("read seek: %ld\n", seek);
+    if ( seek < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -94,7 +104,9 @@ int main(int argc, char* argv[]) {
         printf("[seek=0]Text from the file \"%s\":\n%s", file_name, buff);
     }
 
-    if (lseek(fd, 6, SEEK_SET) < 0) {
+    seek = lseek(fd, 6, SEEK_SET);
+    printf("read seek: %ld\n", seek);
+    if ( seek < 0) {
         perror("lseek error");
         close(fd);
         return 1;

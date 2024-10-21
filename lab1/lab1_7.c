@@ -47,10 +47,24 @@ int main(int argc, char* argv[]) {
     strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", localtime(&buff.st_ctime));
     printf("Last time status change: %s\n", time_str);
 
-
-    // printf("Last time access: %ld\n", buff.st_atim.tv_sec);
-    // printf("Last time modification: %ld\n", buff.st_mtim.tv_sec);
-    // printf("Last time status change: %ld\n", buff.st_ctim.tv_sec);
+    printf("File type: ");
+    switch (buff.st_mode & S_IFMT) {
+        case S_IFREG:
+            printf("file\n");
+            break;
+        case S_IFDIR:
+            printf("directory\n");
+            break;
+        case S_IFCHR:
+            printf("special byte file\n");
+            break;
+        case S_IFBLK:
+            printf("special block file\n");
+            break;
+        default:
+            printf("unknown\n");
+            break;
+    }
 
     return 0;
 }

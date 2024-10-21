@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (lseek(fd, 30, SEEK_SET) < 0) {
+    if (lseek(fd, 300, SEEK_SET) < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
         printf("[seek=0]Text from the file \"%s\":\n%s", file_name, buff);
     }
 
-    if (lseek(fd, 30, SEEK_SET) < 0) {
+    if (lseek(fd, 300, SEEK_SET) < 0) {
         perror("lseek error");
         close(fd);
         return 1;
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     if (bytes_read < 0) {
         perror("Couldn't read the file");
     } else {
-        printf("\n[seek=6]Text from the file \"%s\":\n%s", file_name, buff);
+        printf("\n[seek=30]Text from the file \"%s\":\n%s", file_name, buff);
     }
 
     if (close(fd) == -1) {

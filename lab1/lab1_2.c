@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     fd = open(file_name, O_RDONLY);
     if (fd == -1) {
         //printf("Error %d: %s\n", errno, strerror(errno));
-        perror("Couldn't open the file the second time");
+        perror("Couldn't read the file the second time");
         return 1;
     }
 
