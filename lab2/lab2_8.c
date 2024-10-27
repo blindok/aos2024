@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 
 
-#define BUF_SIZE 1024
+#define BUF_SIZE 32
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -38,7 +38,8 @@ int main(int argc, char *argv[]) {
         ssize_t bytes_read;
         printf("Child starts reading...\n");
         while ((bytes_read = read(input_fd, buffer, BUF_SIZE)) > 0) {
-            printf("Child reads %ld bytes...\n", bytes_read);
+            //printf("Child reads %ld bytes...\n", bytes_read);
+            printf("%s", buffer);
             write(output_fd, buffer, bytes_read);
         }
         printf("Child stops reading.\n");
@@ -71,7 +72,8 @@ int main(int argc, char *argv[]) {
         char buffer[BUF_SIZE];
         ssize_t bytes_read;
         while ((bytes_read = read(input_fd, buffer, BUF_SIZE)) > 0) {
-            printf("Parent reads %ld bytes...\n", bytes_read);
+            //printf("Parent reads %ld bytes...\n", bytes_read);
+            printf("%s", buffer);
             write(output_fd, buffer, bytes_read);
         }
         
@@ -82,7 +84,7 @@ int main(int argc, char *argv[]) {
         printf("Parent closes input_fd\n");
         close(input_fd);
 
-        wait(NULL);
+        //wait(NULL);
 
         output_fd = open(output_file, O_RDONLY);
         if (output_fd == -1) {
