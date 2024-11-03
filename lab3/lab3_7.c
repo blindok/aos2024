@@ -11,7 +11,6 @@ int main() {
 
         sleep(1);
         kill(pid, SIGUSR1);
-        //kill(pid, SIGCHLD);
 
         int status = 0;
         wait(&status);   

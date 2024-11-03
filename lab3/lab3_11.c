@@ -10,8 +10,14 @@ void handler(int sig) {
 
 int main() {
     struct sigaction sa;
+
+    // sigset_t set;
+    // sigemptyset(&set);
+    // sigaddset(&set, SIGUSR1);
+    // sigprocmask(SIG_BLOCK, &set, NULL);
     sa.sa_handler = handler;
-    sigemptyset(&sa.sa_mask);
+    //sa.sa_mask = set;
+    //sigemptyset(&sa.sa_mask);
     sigaction(SIGUSR1, &sa, NULL);
 
     int pids[5];
