@@ -21,8 +21,9 @@ int main() {
         char buf[128];
         int bytes_read;
         
-        while (bytes_read = read(_pipe[0], buf, sizeof(buf) - 1) > 0) {
+        while (bytes_read = read(_pipe[0], buf, sizeof(buf)-1) > 0) {
             printf("Parent received: %s", buf);
+            memset(buf, 0, 128);
         }
 
         wait(NULL);
@@ -35,6 +36,7 @@ int main() {
         char buf[128];
         while (fgets(buf, sizeof(buf), stdin) != NULL) {
             write(_pipe[1], buf, strlen(buf));
+            memset(buf, 0, 128);
         }
 
         close(_pipe[0]);
