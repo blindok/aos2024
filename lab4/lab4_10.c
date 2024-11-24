@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <string.h>
 
-#define SIZE 50
+#define SIZE 2
 
 int main() {
     int pid = fork();

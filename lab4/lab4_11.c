@@ -5,7 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#define SIZE 50
+#define SIZE 2
 
 void set_lock(int fd, int lock_type) {
     struct flock lock;
@@ -14,28 +14,41 @@ void set_lock(int fd, int lock_type) {
     lock.l_start = 0;
     lock.l_len = 0;
 
-    while(fcntl(fd, F_SETLK, &lock) == -1) ;
+    fcntl(fd, F_SETLK, &lock) == -1;
 }
 
 int main() {
     int pid = fork();
 
     if (pid > 0) {
+        sleep(1);
         char* tag = "[parent]";
         char* msg = calloc(sizeof(tag) + SIZE, sizeof(char));
         strcpy(msg, tag);
 
         char buf[SIZE] = {0};
-        while(1) {
-            memset(buf, 0, SIZE);
+        struct flock lock;
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_SET;
+        lock.l_start = 0;
+        lock.l_len = 0;
+        while (1) {
+            lock.l_type = F_WRLCK;
 
-            set_lock(STDOUT_FILENO, F_WRLCK);
+            while (fcntl(STDOUT_FILENO, F_SETLK, &lock) == -1);
 
-            int readBytes = read(STDIN_FILENO, buf, SIZE);
-            write(STDOUT_FILENO, strcat(msg, buf), sizeof(tag) + readBytes);
-            strcpy(msg, tag);
+            int readBytes = 1;
+            while(readBytes = read(STDIN_FILENO, buf, SIZE)) {
+                write(STDOUT_FILENO, strcat(msg, buf), sizeof(tag) + readBytes);
+                strcpy(msg, tag);
+                if (buf[readBytes-1] == '\n') {
+                    break;
+                }
+            }
 
-            set_lock(STDOUT_FILENO, F_UNLCK);
+            lock.l_type = F_UNLCK;
+            fcntl(STDOUT_FILENO, F_SETLK, &lock);
+            sleep(1);
         }
         
     } else if (pid == 0) {
@@ -44,17 +57,32 @@ int main() {
         strcpy(msg, tag);
 
         char buf[SIZE] = {0};
-        while(1) {
-            memset(buf, 0, SIZE);
+        
+        struct flock lock;
+        lock.l_type = F_WRLCK;
+        lock.l_whence = SEEK_SET;
+        lock.l_start = 0;
+        lock.l_len = 0;
 
-            set_lock(STDOUT_FILENO, F_WRLCK);
+        while (1) {
+            lock.l_type = F_WRLCK;
 
-            int readBytes = read(STDIN_FILENO, buf, SIZE);
-            write(STDOUT_FILENO, strcat(msg, buf), sizeof(tag) + readBytes);
-            strcpy(msg, tag);
+            while (fcntl(STDOUT_FILENO, F_SETLK, &lock) == -1);
 
-            set_lock(STDOUT_FILENO, F_UNLCK);
+            int readBytes = 1;
+            while(readBytes = read(STDIN_FILENO, buf, SIZE)) {
+                
+                write(STDOUT_FILENO, strcat(msg, buf), sizeof(tag) + readBytes);
+                strcpy(msg, tag);
+                if (buf[readBytes - 1] == '\n') {
+                    break;
+                }
+            }
+            lock.l_type = F_UNLCK;
+            fcntl(STDOUT_FILENO, F_SETLK, &lock);
+            sleep(1);
         }
+        
     } else {
         perror("fork() error");
         return 1;
