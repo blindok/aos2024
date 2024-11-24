@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     struct msqid_ds buf;
     struct message msg;
 
-    int key = ftok("progfile", 'a');
+    int key = ftok(argv[1], 'a');
     if (key == -1) {
         perror("ftok() error");
         return 1;

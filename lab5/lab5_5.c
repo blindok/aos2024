@@ -21,6 +21,11 @@ int main(int argc, char *argv[]) {
             case EPERM:
                 fprintf(stderr, "Error: Insufficient permissions to delete the message queue with ID %d.\n", msgid);
                 break;
+            case EACCES:
+                fprintf(stderr, "Error: No access to queue with ID %d.\n", msgid);
+                break;
+            case EIDRM:
+                fprintf(stderr, "Error: Queue with ID %d has already been deleted by another process.\n", msgid);
             default:
                 perror("Error deleting the message queue");
         }

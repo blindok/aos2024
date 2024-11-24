@@ -8,7 +8,7 @@
 
 struct message {
     long msg_type;
-    char msg_text[100];
+    char msg_text[5];
 };
 
 int main(int argc, char *argv[]) {
@@ -20,23 +20,27 @@ int main(int argc, char *argv[]) {
     int msgid = atoi(argv[1]);
     long msg_type = atol(argv[2]);
     int num_bytes = atoi(argv[3]);
-    printf("Read first %d bytes of a file of type %ld from queue with id: %d\n", num_bytes, msg_type, msgid);
+    printf("Read first %d bytes of a message of type %ld from queue with id: %d\n", num_bytes, msg_type, msgid);
 
     struct message msg;
     memset(&msg, 0, sizeof(msg));
 
-    int received_bytes = msgrcv(msgid, &msg, num_bytes, msg_type, IPC_NOWAIT | MSG_NOERROR);
+    int received_bytes = msgrcv(msgid, &msg, sizeof(msg.msg_text) - 1, msg_type, IPC_NOWAIT | MSG_NOERROR);
 
     if (received_bytes == -1) {
         if (errno == ENOMSG) {
-            printf("No message of type %ld in queue.\n", msg_type);
+            fprintf(stderr, "No message of type %ld in queue.\n", msg_type);
+        } else if (errno == E2BIG) {
+            fprintf(stderr, "Message is too long.\n");
         } else {
             perror("msgrcv error()");
             return 1;
         }
     } else {
         printf("Recieved message of type %ld: ", msg.msg_type);
-        fwrite(msg.msg_text, sizeof(char), received_bytes, stdout); // Вывод первых считанных байтов
+        msg.msg_text[4] = '\0';
+        printf("%s", msg.msg_text);
+        //fwrite(msg.msg_text, sizeof(char), received_bytes, stdout);
         printf("\n");
     }
 
