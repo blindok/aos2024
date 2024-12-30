@@ -59,13 +59,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        printf("Task #%d:\n%s", i + 1, buf);
-        clock_t start_time = clock();
+        printf("\nTask #%d:\n%s", i + 1, buf);
         scanf("%d", &result);
-        clock_t end_time = clock();
-
-        double response_time = (end_time - start_time) / CLOCKS_PER_SEC;
-        printf("Response Time: %.3f seconds\n", response_time);
 
         sprintf(buf, "%d", result);
         if (send(client_socket, buf, strlen(buf), 0) < 0) {
@@ -73,6 +68,13 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
+
+    if (recv(client_socket, buf, BUF_SIZE, 0) <= 0) {
+            fprintf(stderr, "[error] failed to receive a message from the server\n");
+            return 1;
+        }
+
+        printf("\nTotal time: %s\n", buf);
 
     printf("End connection with the server\n");
     close(client_socket);

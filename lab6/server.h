@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
+#include <sys/msg.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <time.h>
@@ -14,6 +15,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <limits.h>
 
 #define EXPRESSION_SIZE   64
 #define MAX_TASKS_NUMBER  100
@@ -29,7 +31,9 @@ typedef struct {
 typedef struct {
     Task tasks[MAX_TASKS_NUMBER];
     int total_tasks;
+    int correct_task;
     double correct_percent;  
+    double total_time;
 } Stat;
 
 typedef struct {
@@ -42,4 +46,4 @@ int sem_id;
 const char operators[] = "+-*/%^";
 
 int generate_random_number();
-void generate_task(Task* const task, int* const previous_result);
+void generate_task(Task* const task, int previous_result);

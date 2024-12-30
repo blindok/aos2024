@@ -3,6 +3,7 @@
 #define LOG_FILE_NAME_SIZE  16
 #define LOG_FILE_SIZE       64
 #define SHM_KEY             1234
+#define MSG_KEY             1235
 #define MAX_CLIENTS         10
 #define BUF_SIZE            256
 
@@ -83,12 +84,14 @@ int generate_random_number() {
     return abs(num % MAX_NUMBER);
 }
 
-void generate_task(Task* const task, int* const previous_result) {
-    int operand1 = (previous_result == NULL) ? generate_random_number() : *previous_result;
+void generate_task(Task* const task, int previous_result) {
+    int operand1 = (previous_result == INT_MIN) ? generate_random_number() : previous_result;
     int operand2 = generate_random_number();
     char operator = operators[generate_random_number() % (sizeof(operators) / sizeof(char))];
 
-    snprintf(task->expression, EXPRESSION_SIZE, "%d %c %d", operand1, operator, operand2);
+    memset(task->expression, 0, EXPRESSION_SIZE);
+    //snprintf(task->expression, EXPRESSION_SIZE, "%d %c %d = ", operand1, operator, operand2);
+    sprintf(task->expression, "%d %c %d = ", operand1, operator, operand2);
 
     switch (operator) {
         case '+': task->correct_answer = operand1 + operand2; break;
@@ -131,6 +134,32 @@ void shut_down() {
     close(log_fd);
 }
 
+int init_message_queue(int* const msg_id) {
+    *msg_id = msgget(MSG_KEY, IPC_CREAT | 0666);
+    if (*msg_id == -1) {
+        return 1;
+    }
+    return 0; 
+}
+
+void close_message_queue(int msg_id) {
+    msgctl(msg_id, IPC_RMID, NULL);
+}
+
+void handle_answer(int msg_id) {
+    Message msg;
+    msgrcv(msg_id, &msg, sizeof(msg.task), 1, 0);
+
+    int is_correct = (msg.task.client_answer == msg.task.correct_answer);
+
+    sem_lock();
+    stat->tasks[stat->total_tasks] = msg.task;
+    stat->total_tasks++;
+    if (is_correct) stat->correct_task++;
+    stat->total_time += msg.task.response_time;
+    sem_unlock();
+}
+
 int main(int argc, char* argv[]) {
     if (argc != 2) {
         fprintf(stderr, "Usage format: %s <config file>\n", argv[0]);
@@ -170,6 +199,7 @@ int main(int argc, char* argv[]) {
     log_msg("creates a new session");
 
     signal(SIGHUP, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
 
     // pid = fork();
     // if (pid > 0) {
@@ -209,6 +239,14 @@ int main(int argc, char* argv[]) {
 
     log_msg("created socket");
 
+    int msg_id;
+    if (init_message_queue(&msg_id)) {
+        log_msg("[error] failed to create a massage queue");
+        return 1;
+    }
+
+    log_msg("created message queue");
+
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -234,34 +272,66 @@ int main(int argc, char* argv[]) {
 
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
-    int previous_result = -1000;
+    int previous_result = INT_MIN;
 
     while (1) {
         int client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &addr_len);
         log_msg("client connected");
 
         read(client_socket, buffer, BUF_SIZE);
+
+        struct timespec start, end;
         if (strncmp(buffer, "start", 5) == 0) {
             int quantity = atoi(buffer + 6);
             for (int i = 0; i < quantity; ++i) {
                 Task task;
-                generate_task(&task, previous_result == -1000 ? NULL : &previous_result);
+                Message msg;
+                generate_task(&task, previous_result);
+                log_msg(task.expression);
                 write(client_socket, task.expression, strlen(task.expression));
 
+                clock_gettime(CLOCK_MONOTONIC, &start);
                 read(client_socket, buffer, 256);
-                task.client_answer = atoi(buffer);
+                clock_gettime(CLOCK_MONOTONIC, &end);
 
+                task.response_time = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+                task.client_answer = atoi(buffer);
                 sem_lock();
-                stat->tasks[stat->total_tasks++] = task;
+                stat->total_time += task.response_time;
                 sem_unlock();
 
-                previous_result = task.correct_answer;
+                msg.mtype = 1;
+                msg.task = task;
+                msgsnd(msg_id, &msg, sizeof(msg.task), 0);
+
+                pid_t pid = fork();
+                if (pid == 0) {
+                    handle_answer(msg_id);
+
+                    pid = fork();
+                    if (pid == 0) {
+                        
+                    }
+                    return 0;
+                }
+
+                // if (*shared_counter == 0) {
+                //     send_stats_to_client(client_socket);
+                // }
+
+                previous_result = task.client_answer;
             }
+            char time[7];
+            sprintf(time, "%f", stat->total_time);
+            write(client_socket, time, strlen(time));
         }
+
         close(client_socket);
+        goto finish;
     }
     
-
+    finish:
+    close_message_queue(msg_id);
     disable_shared_memory();
     shut_down();
 
